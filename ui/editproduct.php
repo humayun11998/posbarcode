@@ -12,27 +12,100 @@ $row = $select->fetch(PDO::FETCH_ASSOC);
 
 
 // Update Product 
+if($_SERVER['REQUEST_METHOD'] === "POST" && isset($_POST['btneditproduct'])){
+  $product_txt = htmlspecialchars($_POST['txt_pname']);
+  $options_txt = $_POST['txtselect_option'];
+  $descp_txt = htmlspecialchars($_POST['txt_descp']);
+  $stock_txt = htmlspecialchars($_POST['txt_stock']);
+  $purchasePrice_txt = htmlspecialchars($_POST['txt_purchaseprice']);
+  $salePrice_txt = htmlspecialchars($_POST['txt_saleprice']);
 
-if($_SERVER['REQUEST_METHOD'] === "POST" && isset($_POST['btn_edit'])){
+  $f_name = $_FILES['myfile']['name'];
 
-$barcode = htmlspecialchars($_POST['txt_barcode']);
-$product = htmlspecialchars($_POST['txt_pname']);
-$options = $_POST['txtselect_option'];
-$descp = htmlspecialchars($_POST['txt_descp']);
-$stock = htmlspecialchars($_POST['txt_stock']);
-$purchasePrice = htmlspecialchars($_POST['txt_purchaseprice']);
-$salePrice = htmlspecialchars($_POST['txt_saleprice']);
+  if(!empty($f_name)){
+    $f_tmp  =  $_FILES['myfile']['tmp_name'];
+    $f_size  =  $_FILES['myfile']['size'];
+    $f_extension = explode('.',$f_name);
+    $f_extension = strtolower(end($f_extension));
+    $f_newfile = uniqid() . '.' . $f_extension;
+    $store = "productimages/".$f_newfile;
+  
+    if($f_extension=='jpg' || $f_extension=='png' || $f_extension=='gif' || $f_extension=='jpeg'){
+  
+      if($f_size>=1000000){
+        $_SESSION['status'] = "Max file Should be 1MB";
+        $_SESSION['status_code'] = "warning";
+  
+      }else{
+        if(move_uploaded_file($f_tmp,$store)){
+          $f_newfile;
+          $update = $pdo->prepare("UPDATE tbl_product SET     
+          product       = :product,    
+          category      = :category,    
+          description   = :descp,    
+          stock         = :stock,    
+          purchaseprice = :purchaseprice,    
+          saleprice     = :saleprice,    
+          image         = :image
+          WHERE pid     = $id");
+      
+          $update->bindParam(':product',$product_txt);
+          $update->bindParam(':category',$options_txt);
+          $update->bindParam(':descp',$descp_txt);
+          $update->bindParam(':stock',$stock_txt);
+          $update->bindParam(':purchaseprice',$purchasePrice_txt);
+          $update->bindParam(':saleprice',$salePrice_txt);
+          $update->bindParam(':image',$f_newfile);
+      
+          if($update->execute()){
+            $_SESSION['status'] = "Product Update Successfully With New Image";
+            $_SESSION['status_code'] = "success";
+          }else{
+            $_SESSION['status'] = "Product updated Error";
+            $_SESSION['status_code'] = "error";
+      
+          }
 
-$f_name = $_FILES['myfile']['name'];    
+        }
+      }
+      }
 
+   }else{
+    $update = $pdo->prepare("UPDATE tbl_product SET     
+    product       = :product,    
+    category      = :category,    
+    description   = :descp,    
+    stock         = :stock,    
+    purchaseprice = :purchaseprice,    
+    saleprice     = :saleprice,    
+    image         = :image
+    WHERE pid     = $id");
 
+    $update->bindParam(':product',$product_txt);
+    $update->bindParam(':category',$options_txt);
+    $update->bindParam(':descp',$descp_txt);
+    $update->bindParam(':stock',$stock_txt);
+    $update->bindParam(':purchaseprice',$purchasePrice_txt);
+    $update->bindParam(':saleprice',$salePrice_txt);
+    $update->bindParam(':image',$row['image']);
 
+    if($update->execute()){
+      $_SESSION['status'] = "Product Update Successfully";
+      $_SESSION['status_code'] = "success";
+    }else{
+      $_SESSION['status'] = "Product updated Error";
+      $_SESSION['status_code'] = "error";
 
+    }
 
+  }
 
 }
 
 
+$select = $pdo->prepare("SELECT * FROM tbl_product WHERE pid = $id");
+$select->execute();
+$row = $select->fetch(PDO::FETCH_ASSOC);
 ?>
     <!-- Content Wrapper. Contains page content -->
     <div class="content-wrapper">
@@ -114,7 +187,7 @@ $f_name = $_FILES['myfile']['name'];
               </div>
               <div class="card-footer">
                 <div class="text-center">
-                  <button type="submit" name="btn_edit" class="btn btn-success">Update Product</button>
+                  <button type="submit" name="btneditproduct" class="btn btn-success">Update Product</button>
                 </div>
                 </div>
               </form>
